@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Issue Tracker — Team Board</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg-primary:#ffffff;--bg-secondary:#f5f5f3;--bg-tertiary:#efefed;
+  --text-primary:#1a1a1a;--text-secondary:#6b6b6b;--text-tertiary:#999;
+  --border-light:rgba(0,0,0,0.1);--border-med:rgba(0,0,0,0.18);--border-strong:rgba(0,0,0,0.28);
+  --radius-md:8px;--radius-lg:12px;
+  --blue-bg:#E6F1FB;--blue-text:#185FA5;
+  --amber-bg:#FAEEDA;--amber-text:#854F0B;
+  --red-bg:#FCEBEB;--red-text:#A32D2D;
+  --green-bg:#EAF3DE;--green-text:#3B6D11;
+  --purple-bg:#EEEDFE;--purple-text:#534AB7;
+  --teal-bg:#E1F5EE;--teal-text:#0F6E56;
+  --coral-bg:#FAECE7;--coral-text:#993C1D;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg-primary:#1e1e1c;--bg-secondary:#2a2a28;--bg-tertiary:#323230;
+  --text-primary:#f0f0ee;--text-secondary:#a0a09e;--text-tertiary:#6a6a68;
+  --border-light:rgba(255,255,255,0.08);--border-med:rgba(255,255,255,0.14);--border-strong:rgba(255,255,255,0.24);
+  --blue-bg:#0c447c;--blue-text:#b5d4f4;
+  --amber-bg:#633806;--amber-text:#fac775;
+  --red-bg:#791f1f;--red-text:#f7c1c1;
+  --green-bg:#27500a;--green-text:#c0dd97;
+  --purple-bg:#3c3489;--purple-text:#cecbf6;
+  --teal-bg:#085041;--teal-text:#9fe1cb;
+  --coral-bg:#712b13;--coral-text:#f5c4b3;
+}}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg-tertiary);color:var(--text-primary);font-size:14px;line-height:1.5;min-height:100vh}
+.app{padding:1.5rem;max-width:1140px;margin:0 auto}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:10px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-title{font-size:20px;font-weight:600;color:var(--text-primary)}
+.brand-badge{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--bg-secondary);color:var(--text-secondary);border:0.5px solid var(--border-light)}
+.topbar-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.add-btn{padding:8px 18px;font-size:13px;font-weight:600;border-radius:var(--radius-md);border:none;background:#185FA5;color:#fff;cursor:pointer;transition:opacity 0.15s}
+.add-btn:hover{opacity:0.88}
+.icon-btn{padding:7px 13px;font-size:12px;font-weight:500;border-radius:var(--radius-md);border:0.5px solid var(--border-med);background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;transition:background 0.15s;display:inline-flex;align-items:center;gap:5px}
+.icon-btn:hover{background:var(--bg-secondary);color:var(--text-primary)}
+.metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:1.5rem}
+@media(max-width:600px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.metric{background:var(--bg-secondary);border-radius:var(--radius-md);padding:.9rem 1rem}
+.metric-label{font-size:11px;color:var(--text-secondary);margin-bottom:4px;text-transform:uppercase;letter-spacing:.03em}
+.metric-val{font-size:24px;font-weight:600}
+.metric-sub{font-size:10px;color:var(--text-tertiary);margin-top:2px}
+.slicer-row{display:flex;align-items:center;gap:8px;margin-bottom:1rem;flex-wrap:wrap}
+.slicer-label{font-size:12px;color:var(--text-secondary);white-space:nowrap;font-weight:500}
+.month-chip{font-size:11px;font-weight:500;padding:5px 13px;border-radius:20px;border:0.5px solid var(--border-med);background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;transition:all 0.15s}
+.month-chip.active{background:var(--bg-secondary);color:var(--text-primary);border-color:var(--border-strong)}
+.controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.25rem;align-items:center}
+.controls input[type=text]{padding:8px 12px;font-size:13px;border-radius:var(--radius-md);border:0.5px solid var(--border-med);background:var(--bg-primary);color:var(--text-primary);width:190px;outline:none}
+.controls input[type=text]:focus{border-color:var(--border-strong)}
+.controls select{padding:8px 10px;font-size:13px;border-radius:var(--radius-md);border:0.5px solid var(--border-med);background:var(--bg-primary);color:var(--text-primary);outline:none;cursor:pointer}
+.view-toggle{display:flex;border:0.5px solid var(--border-med);border-radius:var(--radius-md);overflow:hidden;margin-left:auto}
+.view-btn{padding:7px 16px;font-size:12px;font-weight:500;background:transparent;border:none;cursor:pointer;color:var(--text-secondary)}
+.view-btn.active{background:var(--bg-secondary);color:var(--text-primary)}
+.kanban{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media(max-width:700px){.kanban{grid-template-columns:1fr}}
+.col-wrap{background:var(--bg-secondary);border-radius:var(--radius-lg);padding:12px;min-height:120px}
+.col-head{font-size:12px;font-weight:600;color:var(--text-secondary);padding:0 2px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border-light);margin-bottom:10px;text-transform:uppercase;letter-spacing:.04em}
+.col-count{font-size:11px;padding:2px 8px;border-radius:20px;background:var(--bg-tertiary);color:var(--text-tertiary)}
+.card{background:var(--bg-primary);border:0.5px solid var(--border-light);border-radius:var(--radius-lg);padding:.9rem;margin-bottom:8px;cursor:pointer;transition:border-color 0.15s,box-shadow 0.15s}
+.card:hover{border-color:var(--border-med);box-shadow:0 2px 8px rgba(0,0,0,0.06)}
+.card:last-child{margin-bottom:0}
+.card-id{font-size:10px;color:var(--text-tertiary);font-family:'SF Mono',monospace;margin-bottom:3px}
+.card-title{font-size:13px;font-weight:500;color:var(--text-primary);line-height:1.4}
+.card-dates{display:flex;gap:12px;margin-top:6px;flex-wrap:wrap}
+.card-date-item{font-size:10px;color:var(--text-tertiary)}
+.card-date-label{font-weight:700;text-transform:uppercase;font-size:9px;letter-spacing:.04em;margin-right:3px;color:var(--text-tertiary)}
+.card-meta{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-top:8px}
+.prio{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px}
+.prio-Critical{background:var(--red-bg);color:var(--red-text)}
+.prio-High{background:var(--amber-bg);color:var(--amber-text)}
+.prio-Medium{background:var(--blue-bg);color:var(--blue-text)}
+.prio-Low{background:var(--green-bg);color:var(--green-text)}
+.tag{font-size:10px;padding:2px 8px;border-radius:20px;background:var(--bg-secondary);color:var(--text-secondary);border:0.5px solid var(--border-light)}
+.days-badge{font-size:10px;font-weight:600;padding:2px 8px;border-radius:20px;margin-left:auto}
+.days-ok{background:var(--green-bg);color:var(--green-text)}
+.days-warn{background:var(--amber-bg);color:var(--amber-text)}
+.days-hot{background:var(--red-bg);color:var(--red-text)}
+.card-footer{display:flex;align-items:center;justify-content:flex-end;margin-top:8px}
+.due-red{color:var(--red-text);font-weight:500}
+.avatar{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0}
+.av-blue{background:var(--blue-bg);color:var(--blue-text)}
+.av-teal{background:var(--teal-bg);color:var(--teal-text)}
+.av-amber{background:var(--amber-bg);color:var(--amber-text)}
+.av-purple{background:var(--purple-bg);color:var(--purple-text)}
+.av-coral{background:var(--coral-bg);color:var(--coral-text)}
+.list-view{display:none}
+.section-head{font-size:12px;font-weight:600;color:var(--text-secondary);margin:1.5rem 0 .75rem;padding-bottom:8px;border-bottom:0.5px solid var(--border-light);text-transform:uppercase;letter-spacing:.04em}
+.table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:0.5px solid var(--border-light);background:var(--bg-primary)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:11px;font-weight:600;color:var(--text-secondary);text-align:left;padding:10px 14px;border-bottom:0.5px solid var(--border-light);background:var(--bg-secondary);text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+td{padding:10px 14px;border-bottom:0.5px solid var(--border-light);color:var(--text-primary);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg-secondary);cursor:pointer}
+.status-pill{font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.sp-Open{background:var(--amber-bg);color:var(--amber-text)}
+.sp-InProgress{background:var(--blue-bg);color:var(--blue-text)}
+.sp-InReview{background:var(--purple-bg);color:var(--purple-text)}
+.sp-Done{background:var(--green-bg);color:var(--green-text)}
+.closed-section{grid-column:1/-1;margin-top:8px}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:200;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg-primary);border-radius:var(--radius-lg);border:0.5px solid var(--border-med);padding:1.75rem;width:500px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.12)}
+.modal h3{font-size:17px;font-weight:600;color:var(--text-primary);margin-bottom:1.25rem}
+.form-row{margin-bottom:1rem}
+.form-row label{font-size:12px;font-weight:500;color:var(--text-secondary);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.03em}
+.form-row input,.form-row select,.form-row textarea{width:100%;padding:9px 11px;font-size:13px;border-radius:var(--radius-md);border:0.5px solid var(--border-med);background:var(--bg-primary);color:var(--text-primary);outline:none;font-family:inherit}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:var(--border-strong)}
+.form-row textarea{resize:vertical;min-height:72px;line-height:1.5}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:1.25rem;padding-top:1rem;border-top:0.5px solid var(--border-light)}
+.btn-save{padding:9px 20px;font-size:13px;font-weight:600;border-radius:var(--radius-md);border:none;background:#185FA5;color:#fff;cursor:pointer;transition:opacity 0.15s}
+.btn-save:hover{opacity:0.88}
+.btn-cancel{padding:9px 16px;font-size:13px;border-radius:var(--radius-md);border:0.5px solid var(--border-med);background:transparent;color:var(--text-secondary);cursor:pointer}
+.btn-cancel:hover{background:var(--bg-secondary)}
+.btn-delete{padding:9px 14px;font-size:13px;border-radius:var(--radius-md);border:0.5px solid var(--red-text);background:transparent;color:var(--red-text);cursor:pointer;margin-right:auto}
+.hint-box{font-size:11px;color:var(--text-tertiary);padding:7px 10px;background:var(--bg-secondary);border-radius:var(--radius-md);margin-top:-6px;margin-bottom:10px;border:0.5px solid var(--border-light)}
+.empty{font-size:13px;color:var(--text-tertiary);text-align:center;padding:2rem 1rem}
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:var(--text-primary);color:var(--bg-primary);font-size:13px;font-weight:500;padding:10px 22px;border-radius:var(--radius-md);z-index:999;opacity:0;transition:opacity 0.2s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="topbar">
+    <div class="brand">
+      <span class="brand-title">Issue Tracker</span>
+      <span class="brand-badge">Team Board</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" onclick="exportData()" title="Download all data as a JSON file to your hard disk">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export
+      </button>
+      <button class="icon-btn" onclick="document.getElementById('import-file').click()" title="Restore from a previously exported JSON backup">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Import
+      </button>
+      <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+      <button class="add-btn" onclick="openModal()">+ New Issue</button>
+    </div>
+  </div>
+
+  <div class="metrics" id="metrics"></div>
+
+  <div class="slicer-row">
+    <span class="slicer-label">Show closed month:</span>
+    <div id="month-chips" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+  </div>
+
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search issues..." oninput="render()">
+    <select id="filter-prio" onchange="render()">
+      <option value="">All priorities</option>
+      <option>Critical</option><option>High</option><option>Medium</option><option>Low</option>
+    </select>
+    <select id="filter-tag" onchange="render()">
+      <option value="">All tags</option>
+      <option>Bug</option><option>Feature</option><option>Ops</option><option>Data</option><option>Client</option>
+    </select>
+    <select id="filter-assignee" onchange="render()">
+      <option value="">All members</option>
+    </select>
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn-kanban" onclick="setView('kanban')">Kanban</button>
+      <button class="view-btn" id="btn-list" onclick="setView('list')">List</button>
+    </div>
+  </div>
+
+  <div id="kanban-view" class="kanban"></div>
+  <div id="list-view" class="list-view"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <h3 id="modal-title">New issue</h3>
+    <div class="form-row"><label>Title</label><input id="f-title" placeholder="Issue title"></div>
+    <div class="form-row"><label>Description</label><textarea id="f-desc" placeholder="Describe the issue..."></textarea></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Priority</label>
+        <select id="f-prio"><option>Critical</option><option>High</option><option selected>Medium</option><option>Low</option></select>
+      </div>
+      <div class="form-row"><label>Status</label>
+        <select id="f-status" onchange="handleStatusChange()">
+          <option>Open</option><option>In Progress</option><option>In Review</option><option>Done</option>
+        </select>
+      </div>
+      <div class="form-row"><label>Tag</label>
+        <select id="f-tag"><option>Bug</option><option>Feature</option><option>Ops</option><option>Data</option><option>Client</option></select>
+      </div>
+      <div class="form-row"><label>Assignee</label><select id="f-assignee"></select></div>
+    </div>
+    <div class="form-grid3">
+      <div class="form-row"><label>Identified date</label><input type="date" id="f-identified"></div>
+      <div class="form-row"><label>Due date</label><input type="date" id="f-due"></div>
+      <div class="form-row" id="f-closed-col" style="display:none"><label>Closed date</label><input type="date" id="f-closed"></div>
+    </div>
+    <div class="hint-box" id="closed-hint" style="display:none">Auto-set to today when status is Done. Adjust if needed.</div>
+    <div class="modal-actions">
+      <button class="btn-delete" id="btn-delete" style="display:none" onclick="deleteIssue()">Delete</button>
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" onclick="saveIssue()">Save issue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY='issue_tracker_v2';
+const members=[
+  {id:'RK',name:'Ravi Kumar',av:'av-blue'},
+  {id:'PS',name:'Priya S',av:'av-teal'},
+  {id:'AM',name:'Arjun M',av:'av-amber'},
+  {id:'NV',name:'Neha V',av:'av-purple'},
+  {id:'ST',name:'Sana T',av:'av-coral'},
+];
+const avMap=Object.fromEntries(members.map(m=>[m.id,m]));
+const openStatuses=['Open','In Progress','In Review'];
+
+function todayStr(){return new Date().toISOString().split('T')[0]}
+function daysSince(d){if(!d)return null;return Math.floor((new Date()-new Date(d))/(864e5))}
+function isOverdue(i){return i.due&&i.due<todayStr()&&i.status!=='Done'}
+function fmt(d){if(!d)return '—';const[y,m,day]=d.split('-');return `${day}/${m}/${y}`}
+function daysBadge(n){
+  if(n===null||n===undefined)return '';
+  const cls=n<=3?'days-ok':n<=7?'days-warn':'days-hot';
+  return `<span class="days-badge ${cls}">${n}d open</span>`;
+}
+function getMonthKey(d){if(!d)return null;const dt=new Date(d);return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')}
+function monthLabel(k){const[y,m]=k.split('-');return new Date(+y,+m-1,1).toLocaleString('default',{month:'short',year:'numeric'})}
+function avatarCell(m,small){
+  const sz=small?'width:20px;height:20px;font-size:8px':'';
+  return `<div style="display:flex;align-items:center;gap:6px"><div class="avatar ${m.av}" style="${sz}">${m.id}</div><span style="font-size:${small?11:13}px">${m.name}</span></div>`;
+}
+
+let issues=[],nextId=1,editingId=null,currentView='kanban';
+let activeMonths=new Set();
+
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast show';
+  setTimeout(()=>{t.className='toast'},2500);
+}
+
+function loadData(){
+  try{
+    const s=localStorage.getItem(STORAGE_KEY);
+    if(s){const d=JSON.parse(s);issues=d.issues||[];nextId=d.nextId||1;}
+    else seedData();
+  }catch(e){seedData();}
+}
+function saveData(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify({issues,nextId}));}catch(e){}}
+
+function exportData(){
+  const blob=new Blob([JSON.stringify({issues,nextId,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download=`issue-tracker-${todayStr()}.json`;
+  document.body.appendChild(a);a.click();
+  document.body.removeChild(a);URL.revokeObjectURL(url);
+  showToast('Backup saved to your disk');
+}
+
+function importData(e){
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const d=JSON.parse(ev.target.result);
+      if(!Array.isArray(d.issues))throw new Error();
+      if(!confirm(`Import ${d.issues.length} issues? This replaces your current data.`))return;
+      issues=d.issues;nextId=d.nextId||issues.length+1;
+      saveData();activeMonths=new Set();render();
+      showToast(`Imported ${issues.length} issues`);
+    }catch{showToast('Import failed — invalid file');}
+  };
+  reader.readAsText(file);
+  e.target.value='';
+}
+
+function seedData(){
+  issues=[
+    {id:'ISS-001',title:'Reconciliation mismatch in Navi MF daily report',desc:'End-of-day recon showing ₹2.3L discrepancy',prio:'Critical',status:'In Progress',tag:'Ops',assignee:'RK',identified:'2026-04-01',due:'2026-04-08',created:'2026-04-01',closed:null},
+    {id:'ISS-002',title:'Client portal login timeout too aggressive',desc:'Users getting logged out after 5 mins',prio:'High',status:'Open',tag:'Bug',assignee:'PS',identified:'2026-04-02',due:'2026-04-10',created:'2026-04-02',closed:null},
+    {id:'ISS-003',title:'Automate NAV upload process',desc:'Manual NAV uploads taking 45 mins daily',prio:'Medium',status:'Open',tag:'Feature',assignee:'AM',identified:'2026-03-28',due:'2026-04-18',created:'2026-03-28',closed:null},
+    {id:'ISS-004',title:'MIS report format update for Q1',desc:'Client requested new columns in monthly MIS',prio:'High',status:'In Review',tag:'Client',assignee:'NV',identified:'2026-04-01',due:'2026-04-09',created:'2026-04-01',closed:null},
+    {id:'ISS-005',title:'Transaction data export CSV encoding issue',desc:'Special characters breaking in Excel export',prio:'Medium',status:'In Progress',tag:'Bug',assignee:'ST',identified:'2026-04-03',due:'2026-04-12',created:'2026-04-03',closed:null},
+    {id:'ISS-006',title:'Folio creation SLA tracking dashboard',desc:'Need visibility on breached SLAs by team',prio:'High',status:'Open',tag:'Feature',assignee:'RK',identified:'2026-03-25',due:'2026-04-20',created:'2026-03-25',closed:null},
+    {id:'ISS-007',title:'Daily fund flow summary automation',desc:'Automate morning fund flow email to ops',prio:'Low',status:'Done',tag:'Ops',assignee:'PS',identified:'2026-03-20',due:'2026-04-05',created:'2026-03-20',closed:'2026-04-05'},
+    {id:'ISS-008',title:'KYC data sync failing for new folios',desc:'KYC status not reflecting post 6 PM batch',prio:'Critical',status:'Open',tag:'Data',assignee:'AM',identified:'2026-04-04',due:'2026-04-08',created:'2026-04-04',closed:null},
+    {id:'ISS-009',title:'Client statement delivery failure',desc:'3 clients not receiving monthly statements',prio:'High',status:'In Review',tag:'Client',assignee:'NV',identified:'2026-04-02',due:'2026-04-11',created:'2026-04-02',closed:null},
+    {id:'ISS-010',title:'Unit reconciliation script performance',desc:'Recon script timing out for large fund sets',prio:'Medium',status:'Done',tag:'Ops',assignee:'ST',identified:'2026-03-15',due:'2026-04-06',created:'2026-03-15',closed:'2026-03-30'},
+  ];
+  nextId=11;saveData();
+}
+
+function filtered(sl){
+  const s=document.getElementById('search').value.toLowerCase();
+  const p=document.getElementById('filter-prio').value;
+  const t=document.getElementById('filter-tag').value;
+  const a=document.getElementById('filter-assignee').value;
+  return issues.filter(i=>sl.includes(i.status)&&
+    (!s||i.title.toLowerCase().includes(s)||i.id.toLowerCase().includes(s))&&
+    (!p||i.prio===p)&&(!t||i.tag===t)&&(!a||i.assignee===a));
+}
+function filteredClosed(){
+  const s=document.getElementById('search').value.toLowerCase();
+  const p=document.getElementById('filter-prio').value;
+  const t=document.getElementById('filter-tag').value;
+  const a=document.getElementById('filter-assignee').value;
+  return issues.filter(i=>{
+    if(i.status!=='Done')return false;
+    if(activeMonths.size>0&&!activeMonths.has(getMonthKey(i.closed)))return false;
+    return(!s||i.title.toLowerCase().includes(s)||i.id.toLowerCase().includes(s))&&
+      (!p||i.prio===p)&&(!t||i.tag===t)&&(!a||i.assignee===a);
+  });
+}
+
+function renderMetrics(){
+  const o=issues.filter(i=>i.status==='Open').length;
+  const ip=issues.filter(i=>i.status==='In Progress').length;
+  const rv=issues.filter(i=>i.status==='In Review').length;
+  const dn=issues.filter(i=>i.status==='Done').length;
+  const od=issues.filter(i=>isOverdue(i)).length;
+  document.getElementById('metrics').innerHTML=`
+    <div class="metric"><div class="metric-label">Open</div><div class="metric-val">${o}</div><div class="metric-sub">not started</div></div>
+    <div class="metric"><div class="metric-label">In progress</div><div class="metric-val" style="color:var(--blue-text)">${ip}</div><div class="metric-sub">being worked on</div></div>
+    <div class="metric"><div class="metric-label">In review</div><div class="metric-val" style="color:var(--purple-text)">${rv}</div><div class="metric-sub">awaiting sign-off</div></div>
+    <div class="metric"><div class="metric-label">Resolved</div><div class="metric-val" style="color:var(--green-text)">${dn}</div><div class="metric-sub">closed</div></div>
+    <div class="metric"><div class="metric-label">Overdue</div><div class="metric-val" style="color:var(--red-text)">${od}</div><div class="metric-sub">past due date</div></div>`;
+}
+
+function buildMonthChips(){
+  const months=new Set(issues.filter(i=>i.status==='Done'&&i.closed).map(i=>getMonthKey(i.closed)));
+  const sorted=[...months].sort();
+  const wrap=document.getElementById('month-chips');
+  wrap.innerHTML='';
+  if(!sorted.length){wrap.innerHTML='<span style="font-size:12px;color:var(--text-tertiary)">No closed issues yet</span>';return;}
+  sorted.forEach(mk=>{
+    const btn=document.createElement('button');
+    btn.className='month-chip'+(activeMonths.has(mk)?' active':'');
+    btn.textContent=monthLabel(mk);
+    btn.onclick=()=>{activeMonths.has(mk)?activeMonths.delete(mk):activeMonths.add(mk);render();};
+    wrap.appendChild(btn);
+  });
+}
+
+function cardHTML(issue){
+  const m=avMap[issue.assignee]||{id:'??',av:'av-blue'};
+  const refDate=issue.identified||issue.created;
+  const days=daysSince(refDate);
+  return `<div class="card" onclick="editIssue('${issue.id}')">
+    <div class="card-id">${issue.id}</div>
+    <div class="card-title">${issue.title}</div>
+    <div class="card-dates">
+      ${issue.identified?`<span class="card-date-item"><span class="card-date-label">Identified</span>${fmt(issue.identified)}</span>`:''}
+      ${issue.due?`<span class="card-date-item"><span class="card-date-label">Due</span><span class="${isOverdue(issue)?'due-red':''}">${fmt(issue.due)}</span></span>`:''}
+    </div>
+    <div class="card-meta">
+      <span class="prio prio-${issue.prio}">${issue.prio}</span>
+      <span class="tag">${issue.tag}</span>
+      ${days!==null?daysBadge(days):''}
+    </div>
+    <div class="card-footer"><div class="avatar ${m.av}">${m.id}</div></div>
+  </div>`;
+}
+
+function takenDays(i){
+  const ref=i.identified||i.created;
+  return(i.closed&&ref)?Math.max(0,Math.floor((new Date(i.closed)-new Date(ref))/864e5)):null;
+}
+
+function renderKanban(){
+  const kv=document.getElementById('kanban-view');
+  let html=openStatuses.map(s=>{
+    const col=filtered([s]);
+    return `<div class="col-wrap">
+      <div class="col-head"><span>${s}</span><span class="col-count">${col.length}</span></div>
+      ${col.length?col.map(cardHTML).join(''):'<div class="empty">No issues</div>'}
+    </div>`;
+  }).join('');
+  const closed=filteredClosed();
+  if(activeMonths.size>0){
+    const labels=[...activeMonths].map(monthLabel).join(', ');
+    html+=`<div class="closed-section" style="grid-column:1/-1">
+      <div class="section-head">Closed — ${labels}</div>
+      ${closed.length?`<div class="table-wrap"><table>
+        <thead><tr><th>ID</th><th>Title</th><th>Priority</th><th>Assignee</th><th>Tag</th><th>Identified</th><th>Due</th><th>Closed on</th><th>Days taken</th></tr></thead>
+        <tbody>${closed.map(i=>{
+          const m=avMap[i.assignee]||{id:'??',av:'av-blue',name:'?'};
+          const t=takenDays(i);
+          return `<tr onclick="editIssue('${i.id}')">
+            <td style="font-family:monospace;font-size:11px;color:var(--text-tertiary)">${i.id}</td>
+            <td style="font-weight:500;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${i.title}</td>
+            <td><span class="prio prio-${i.prio}">${i.prio}</span></td>
+            <td>${avatarCell(m,true)}</td>
+            <td><span class="tag">${i.tag}</span></td>
+            <td style="font-size:11px;color:var(--text-secondary)">${fmt(i.identified)}</td>
+            <td style="font-size:11px;color:var(--text-tertiary)">${fmt(i.due)}</td>
+            <td style="font-size:12px;color:var(--green-text);font-weight:600">${fmt(i.closed)}</td>
+            <td style="font-size:12px;color:var(--text-secondary)">${t!==null?t+'d':'—'}</td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>`:'<div class="empty">No closed issues for selected month(s)</div>'}
+    </div>`;
+  }
+  kv.innerHTML=html;
+}
+
+function renderList(){
+  const open=filtered(openStatuses);
+  const closed=filteredClosed();
+  const openRow=i=>{
+    const m=avMap[i.assignee]||{id:'??',av:'av-blue',name:'?'};
+    const days=daysSince(i.identified||i.created);
+    const sk=i.status.replace(/\s/g,'');
+    return `<tr onclick="editIssue('${i.id}')">
+      <td style="font-family:monospace;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${i.id}</td>
+      <td style="font-weight:500">${i.title}</td>
+      <td><span class="prio prio-${i.prio}">${i.prio}</span></td>
+      <td><span class="status-pill sp-${sk}">${i.status}</span></td>
+      <td>${avatarCell(m,true)}</td>
+      <td><span class="tag">${i.tag}</span></td>
+      <td style="font-size:11px;color:var(--text-secondary)">${fmt(i.identified)}</td>
+      <td style="font-size:11px" class="${isOverdue(i)?'due-red':''}">${fmt(i.due)}</td>
+      <td>${days!==null?daysBadge(days):''}</td>
+    </tr>`;
+  };
+  const closedRow=i=>{
+    const m=avMap[i.assignee]||{id:'??',av:'av-blue',name:'?'};
+    const t=takenDays(i);
+    return `<tr onclick="editIssue('${i.id}')">
+      <td style="font-family:monospace;font-size:11px;color:var(--text-tertiary);white-space:nowrap">${i.id}</td>
+      <td style="font-weight:500">${i.title}</td>
+      <td><span class="prio prio-${i.prio}">${i.prio}</span></td>
+      <td><span class="status-pill sp-Done">Done</span></td>
+      <td>${avatarCell(m,true)}</td>
+      <td><span class="tag">${i.tag}</span></td>
+      <td style="font-size:11px;color:var(--text-secondary)">${fmt(i.identified)}</td>
+      <td style="font-size:11px;color:var(--text-tertiary)">${fmt(i.due)}</td>
+      <td style="font-size:12px;color:var(--green-text);font-weight:600">${fmt(i.closed)}</td>
+      <td style="font-size:12px;color:var(--text-secondary)">${t!==null?t+'d':'—'}</td>
+    </tr>`;
+  };
+  const lv=document.getElementById('list-view');
+  lv.innerHTML=`
+    <div class="section-head">Active issues</div>
+    <div class="table-wrap">${open.length?`<table>
+      <thead><tr><th>ID</th><th>Title</th><th>Priority</th><th>Status</th><th>Assignee</th><th>Tag</th><th>Identified</th><th>Due</th><th>Days open</th></tr></thead>
+      <tbody>${open.map(openRow).join('')}</tbody></table>`:'<div class="empty">No active issues</div>'}</div>
+    ${activeMonths.size>0?`
+    <div class="section-head" style="margin-top:1.5rem">Closed — ${[...activeMonths].map(monthLabel).join(', ')}</div>
+    <div class="table-wrap">${closed.length?`<table>
+      <thead><tr><th>ID</th><th>Title</th><th>Priority</th><th>Status</th><th>Assignee</th><th>Tag</th><th>Identified</th><th>Due</th><th>Closed on</th><th>Days taken</th></tr></thead>
+      <tbody>${closed.map(closedRow).join('')}</tbody></table>`:'<div class="empty">No closed issues for selected month(s)</div>'}</div>`:''}`;
+}
+
+function render(){renderMetrics();buildMonthChips();renderKanban();renderList();}
+
+function setView(v){
+  currentView=v;
+  document.getElementById('kanban-view').style.display=v==='kanban'?'grid':'none';
+  document.getElementById('list-view').style.display=v==='list'?'block':'none';
+  document.getElementById('btn-kanban').className='view-btn'+(v==='kanban'?' active':'');
+  document.getElementById('btn-list').className='view-btn'+(v==='list'?' active':'');
+}
+
+function handleStatusChange(){
+  const s=document.getElementById('f-status').value;
+  const col=document.getElementById('f-closed-col');
+  const hint=document.getElementById('closed-hint');
+  if(s==='Done'){
+    col.style.display='block';hint.style.display='block';
+    if(!document.getElementById('f-closed').value)document.getElementById('f-closed').value=todayStr();
+  }else{col.style.display='none';hint.style.display='none';document.getElementById('f-closed').value='';}
+}
+
+function openModal(id=null){
+  editingId=id;
+  const del=document.getElementById('btn-delete');
+  if(id){
+    const i=issues.find(x=>x.id===id);
+    document.getElementById('modal-title').textContent='Edit issue';
+    document.getElementById('f-title').value=i.title;
+    document.getElementById('f-desc').value=i.desc||'';
+    document.getElementById('f-prio').value=i.prio;
+    document.getElementById('f-status').value=i.status;
+    document.getElementById('f-tag').value=i.tag;
+    document.getElementById('f-assignee').value=i.assignee;
+    document.getElementById('f-identified').value=i.identified||'';
+    document.getElementById('f-due').value=i.due||'';
+    document.getElementById('f-closed').value=i.closed||'';
+    del.style.display='block';
+  }else{
+    document.getElementById('modal-title').textContent='New issue';
+    ['f-title','f-desc','f-due','f-closed'].forEach(x=>document.getElementById(x).value='');
+    document.getElementById('f-identified').value=todayStr();
+    document.getElementById('f-prio').value='Medium';
+    document.getElementById('f-status').value='Open';
+    document.getElementById('f-tag').value='Bug';
+    document.getElementById('f-assignee').value=members[0].id;
+    del.style.display='none';
+  }
+  handleStatusChange();
+  document.getElementById('modal-overlay').className='modal-overlay open';
+}
+
+function editIssue(id){openModal(id)}
+function closeModal(){document.getElementById('modal-overlay').className='modal-overlay'}
+
+function saveIssue(){
+  const title=document.getElementById('f-title').value.trim();
+  if(!title)return;
+  const status=document.getElementById('f-status').value;
+  const closed=status==='Done'?(document.getElementById('f-closed').value||todayStr()):null;
+  const identified=document.getElementById('f-identified').value||todayStr();
+  if(editingId){
+    const i=issues.find(x=>x.id===editingId);
+    Object.assign(i,{title,desc:document.getElementById('f-desc').value,
+      prio:document.getElementById('f-prio').value,status,
+      tag:document.getElementById('f-tag').value,
+      assignee:document.getElementById('f-assignee').value,
+      identified,due:document.getElementById('f-due').value,closed});
+  }else{
+    const pad=n=>String(n).padStart(3,'0');
+    issues.unshift({id:'ISS-'+pad(nextId++),title,
+      desc:document.getElementById('f-desc').value,
+      prio:document.getElementById('f-prio').value,status,
+      tag:document.getElementById('f-tag').value,
+      assignee:document.getElementById('f-assignee').value,
+      identified,due:document.getElementById('f-due').value,
+      created:todayStr(),closed});
+  }
+  saveData();closeModal();render();
+}
+
+function deleteIssue(){
+  if(!editingId)return;
+  if(!confirm('Delete this issue? This cannot be undone.'))return;
+  issues=issues.filter(i=>i.id!==editingId);
+  saveData();closeModal();render();
+}
+
+function populateAssignees(){
+  ['filter-assignee','f-assignee'].forEach(id=>{
+    const sel=document.getElementById(id);
+    if(id==='filter-assignee')sel.innerHTML='<option value="">All members</option>';
+    members.forEach(m=>{sel.innerHTML+=`<option value="${m.id}">${m.name}</option>`;});
+  });
+}
+
+document.getElementById('modal-overlay').addEventListener('click',function(e){if(e.target===this)closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+populateAssignees();
+loadData();
+render();
+</script>
+</body>
+</html>
